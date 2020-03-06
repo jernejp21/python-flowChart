@@ -30,7 +30,8 @@ refComment = ['startStop',
               'forLoop',
               'IO',
               'subProc',
-              'middleware']
+              'middleware',
+              'fc:end']
 
 flow = []
 
@@ -43,7 +44,9 @@ for line in testFunction:
             flow.append({comment: description})
 
 
-g = Digraph('G', filename='process', engine='neato')
+g = Digraph('G', filename='process', engine='dot')
+g.attr(rank='same')
+g.attr(rankdir='LR')
 
 shapes={'startStop': 'oval',
         'process': 'box',
@@ -52,17 +55,45 @@ shapes={'startStop': 'oval',
         'IO': 'cds',
         'subProc': 'folder',
         'middleware': 'tab'}
-
+nodes = []
+node = {'level': None, 'index': None, 'shape': None, 'label': None}
 index = 0
+level = 1
+maxLvl = 1
 for element in flow:
     elID = list(element)[0]
+    if elID == 'fc:end':
+        level -= 1
+        continue
     shape = shapes[elID]
-    g.attr('node', shape=shape, fontname="MS Gothic")
-    g.node(str(index), label=element[elID])
+    node['level'] = level
+    node['index'] = index
+    node['shape'] = shape
+    node['label'] = element[elID]
+    nodes.append(dict(node))
+    #g.attr('node', shape=shape, fontname="MS Gothic")
+    #g.node(str(index), label=element[elID])
+    if elID == 'ifBranch' or elID == 'forLoop':
+        level += 1
+    if level > maxLvl:
+        maxLvl = level
     index += 1
 
-for index in range(1, len(flow)):
-    g.edge(str(index-1), str(index))
+for level in range(1, maxLvl + 1):
+    g1 = Digraph(str(level))
+    for node in nodes:
+        if node['level'] == level:
+            index = str(node['index'])
+            label = node['label']
+            shape = node['shape']
+            g1.attr('node', shape=shape, fontname="MS Gothic")
+            g1.node(index, label=label)
+    g.subgraph(g1)
+
+
+
+#for index in range(1, len(flow)):
+#    g.edge(str(index-1), str(index))
 
 g.view()
 
