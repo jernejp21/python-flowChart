@@ -47,6 +47,7 @@ for line in testFunction:
 g = Digraph('G', filename='process', engine='dot')
 g.attr(rank='same')
 g.attr(rankdir='LR')
+g.node_attr = {'fontname': 'MS Gothic'}
 
 shapes={'startStop': 'oval',
         'process': 'box',
@@ -79,6 +80,7 @@ for element in flow:
         maxLvl = level
     index += 1
 
+#Create level structure
 for level in range(1, maxLvl + 1):
     g1 = Digraph(str(level))
     for node in nodes:
@@ -86,9 +88,26 @@ for level in range(1, maxLvl + 1):
             index = str(node['index'])
             label = node['label']
             shape = node['shape']
-            g1.attr('node', shape=shape, fontname="MS Gothic")
+            g1.attr('node', shape=shape)
             g1.node(index, label=label)
     g.subgraph(g1)
+
+#Connect nodes
+previousLevel = 1
+branches = []
+for index in range(1, len(nodes)):
+    currentLevel = nodes[index]['level']
+    if previousLevel == currentLevel:
+        g.edge(str(index-1), str(index))
+    if currentLevel > previousLevel:
+        g.edge(str(index-1), str(index))
+        branches.append(index-1)
+    if currentLevel < previousLevel:
+        levelDiff = currentLevel - previousLevel
+        g.edge(str(branches[levelDiff]), str(index))
+        del(branches[-1])
+    
+    previousLevel = currentLevel
 
 
 
