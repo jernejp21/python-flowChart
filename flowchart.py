@@ -20,17 +20,20 @@
 import re
 from graphviz import Digraph, Graph
 
-with open('test.c', 'r', encoding='utf-8') as file:
+filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy.c'
+functionName = 'dinputp'
+
+with open(filePath, 'r', encoding='utf-8') as file:
     testFunction = file.readlines()
 
 #List of special words, representing reference comments.
-refComment = ['startStop',
-              'process',
-              'ifBranch',
-              'forLoop',
-              'IO',
-              'subProc',
-              'middleware',
+refComment = ['fc:startStop',
+              'fc:process',
+              'fc:ifBranch',
+              'fc:forLoop',
+              'fc:subFunc',
+              'fc:subRoutine',
+              'fc:middleware',
               'fc:end']
 
 flow = []
@@ -44,37 +47,42 @@ for line in testFunction:
             flow.append({comment: description})
 
 
-g = Digraph('G', filename='process', engine='dot')
+g = Graph('G', filename=functionName, engine='dot')
 g.attr(rank='same')
 g.attr(rankdir='LR')
-g.node_attr = {'fontname': 'MS Gothic'}
+g.attr(splines='ortho')
+g.node_attr = {'shape': 'plaintext',
+               'fontname': 'MS Gothic',
+               'fontsize': '10',
+               'fixedsize': 'true',
+               'width': '2.165', #inch
+               'height': '0.472'} #inch
 
-shapes={'startStop': 'oval',
-        'process': 'box',
-        'ifBranch': 'diamond',
-        'forLoop': 'component',
-        'IO': 'cds',
-        'subProc': 'folder',
-        'middleware': 'tab'}
+shapes={'fc:startStop': 'daido_start.png',
+        'fc:process': 'daido_process.png',
+        'fc:ifBranch': 'daido_if.png',
+        'fc:forLoop': 'daido_for.png',
+        'fc:subFunc': 'daido_subfunction.png',
+        'fc:subRoutine': 'daido_subroutine.png',
+        'fc:middleware': 'daido_middleware.png'}
+
 nodes = []
 node = {'level': None, 'index': None, 'shape': None, 'label': None}
 index = 0
 level = 1
 maxLvl = 1
 for element in flow:
-    elID = list(element)[0]
-    if elID == 'fc:end':
+    elementID = list(element)[0]
+    if elementID == 'fc:end':
         level -= 1
         continue
-    shape = shapes[elID]
     node['level'] = level
     node['index'] = index
-    node['shape'] = shape
-    node['label'] = element[elID]
+    node['shape'] = elementID
+    node['label'] = element[elementID]
     nodes.append(dict(node))
-    #g.attr('node', shape=shape, fontname="MS Gothic")
-    #g.node(str(index), label=element[elID])
-    if elID == 'ifBranch' or elID == 'forLoop':
+
+    if elementID == 'fc:ifBranch' or elementID == 'fc:forLoop':
         level += 1
     if level > maxLvl:
         maxLvl = level
@@ -82,14 +90,23 @@ for element in flow:
 
 #Create level structure
 for level in range(1, maxLvl + 1):
-    g1 = Digraph(str(level))
+    g1 = Graph(str(level))
     for node in nodes:
         if node['level'] == level:
             index = str(node['index'])
             label = node['label']
             shape = node['shape']
-            g1.attr('node', shape=shape)
-            g1.node(index, label=label)
+            #g1.attr('node', image=shape)
+            if shape == 'fc:startStop':
+                g1.node(index,
+                        label=label,
+                        image=shapes[shape],
+                        width="1.299",
+                        height="0.394")
+            else:
+                g1.node(index,
+                        label=label,
+                        image=shapes[shape])
     g.subgraph(g1)
 
 #Connect nodes

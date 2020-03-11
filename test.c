@@ -1,4 +1,4 @@
-static void init714m(UB slot){ //fv:startStop init714m
+static void init714m(UB slot){ //fc:startStop init714m
 /***	ローカル変数		***/
 	ER	local_ledctl;							/*	LED点灯制御結果			*/
 	UB	loop_portcnt;							/*	ループポートカウント	*/
@@ -39,4 +39,4 @@ static void init714m(UB slot){ //fv:startStop init714m
 												/*	fc:process 汎用出力ユニット 実装枚数配列用設定	*/
 	unitinfwt.exfdounit.insrtno[local_slotpos] = slot;
 												/*	fc:process 汎用出力ユニット 実装位置設定する	*/
-}//fv:startStop init714m
+}//fc:startStop init714m
