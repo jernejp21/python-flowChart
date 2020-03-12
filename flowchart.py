@@ -51,6 +51,8 @@ g = Graph('G', filename=functionName, engine='dot')
 g.attr(rank='same')
 g.attr(rankdir='LR')
 g.attr(splines='ortho')
+g.graph_attr = {'fontname': 'MS Gothic',
+               'fontsize': '10',}
 g.node_attr = {'shape': 'plaintext',
                'fontname': 'MS Gothic',
                'fontsize': '10',
@@ -112,17 +114,26 @@ for level in range(1, maxLvl + 1):
 #Connect nodes
 previousLevel = 1
 branches = []
+label = ''
 for index in range(1, len(nodes)):
     currentLevel = nodes[index]['level']
+    shape = nodes[index]['shape']
     if previousLevel == currentLevel:
-        g.edge(str(index-1), str(index))
+        g.edge(str(index-1), str(index), label=label)
     if currentLevel > previousLevel:
-        g.edge(str(index-1), str(index))
+        g.edge(str(index-1), str(index), label=label)
         branches.append(index-1)
     if currentLevel < previousLevel:
         levelDiff = currentLevel - previousLevel
-        g.edge(str(branches[levelDiff]), str(index))
+        g.edge(str(branches[levelDiff]), str(index), label=label)
         del(branches[-1])
+
+    if shape == 'fc:ifBranch':
+        label = 'TRUE'
+    elif shape == 'fc:forLoop':
+        label = 'loop'
+    else:
+        label = ''
     
     previousLevel = currentLevel
 
