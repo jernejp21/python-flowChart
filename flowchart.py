@@ -20,7 +20,7 @@
 import re
 from graphviz import Digraph, Graph
 
-filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy.c'
+filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy2.c'
 functionName = 'dinputp'
 
 with open(filePath, 'r', encoding='utf-8') as file:
@@ -30,6 +30,7 @@ with open(filePath, 'r', encoding='utf-8') as file:
 refComment = ['fc:startStop',
               'fc:process',
               'fc:ifBranch',
+              'fc:else',
               'fc:forLoop',
               'fc:subFunc',
               'fc:subRoutine',
@@ -44,13 +45,16 @@ for line in testFunction:
             #start and end index of refComment
             start, end = re.search(comment, line).span()
             description = re.sub('[/* \n\t]', '', line[end:])
-            flow.append({comment: description})
+            dictionary = {'comment': comment,
+                          'level': None, 'index': None, 'shape': None, 'label': description,
+                          'connectWith': None}
+            flow.append(dictionary)
 
 
 g = Graph('G', filename=functionName, engine='dot')
 g.attr(rank='same')
 g.attr(rankdir='LR')
-g.attr(splines='ortho')
+#g.attr(splines='ortho')
 g.graph_attr = {'fontname': 'MS Gothic',
                'fontsize': '10',}
 g.node_attr = {'shape': 'plaintext',
@@ -73,21 +77,30 @@ node = {'level': None, 'index': None, 'shape': None, 'label': None}
 index = 0
 level = 1
 maxLvl = 1
+connectWith = None
+branches = []
 for element in flow:
-    elementID = list(element)[0]
+    elementID = element['comment']
     if elementID == 'fc:end':
         level -= 1
+        connectWith = branches[-1]
+        del(branches[-1])
         continue
-    node['level'] = level
-    node['index'] = index
-    node['shape'] = elementID
-    node['label'] = element[elementID]
-    nodes.append(dict(node))
+    if elementID == 'fc:else':
+        connectWith = branches[-1]
+        continue
+    element['level'] = level
+    element['index'] = index
+    element['shape'] = shapes[elementID]
+    element['connectWith'] = connectWith
+    connectWith = index
 
     if elementID == 'fc:ifBranch' or elementID == 'fc:forLoop':
         level += 1
+        branches.append(index)
     if level > maxLvl:
         maxLvl = level
+    nodes.append(dict(element))
     index += 1
 
 #Create level structure
@@ -98,49 +111,41 @@ for level in range(1, maxLvl + 1):
             index = str(node['index'])
             label = node['label']
             shape = node['shape']
-            #g1.attr('node', image=shape)
-            if shape == 'fc:startStop':
+            comment = node['comment']
+            if comment == 'fc:startStop':
                 g1.node(index,
                         label=label,
-                        image=shapes[shape],
+                        image=shape,
                         width="1.299",
                         height="0.394")
             else:
                 g1.node(index,
                         label=label,
-                        image=shapes[shape])
+                        image=shape)
     g.subgraph(g1)
 
 #Connect nodes
 previousLevel = 1
 branches = []
 label = ''
-for index in range(1, len(nodes)):
-    currentLevel = nodes[index]['level']
-    shape = nodes[index]['shape']
-    if previousLevel == currentLevel:
-        g.edge(str(index-1), str(index), label=label)
-    if currentLevel > previousLevel:
-        g.edge(str(index-1), str(index), label=label)
-        branches.append(index-1)
-    if currentLevel < previousLevel:
-        levelDiff = currentLevel - previousLevel
-        g.edge(str(branches[levelDiff]), str(index), label=label)
-        del(branches[-1])
+for node in nodes:
+    connectWith = node['connectWith']
+    index = node['index']
+    comment = node['comment']
 
-    if shape == 'fc:ifBranch':
+    if connectWith == None:
+        continue
+    else:
+        g.edge(str(connectWith), str(index), label=label)
+
+    if comment == 'fc:ifBranch':
         label = 'TRUE'
-    elif shape == 'fc:forLoop':
+    elif comment == 'fc:else':
+        label = 'FALSE'
+    elif comment == 'fc:forLoop':
         label = 'loop'
     else:
         label = ''
-    
-    previousLevel = currentLevel
-
-
-
-#for index in range(1, len(flow)):
-#    g.edge(str(index-1), str(index))
 
 g.view()
 
