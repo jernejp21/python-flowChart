@@ -18,6 +18,7 @@
 ##
 
 import re
+import jaconv
 from graphviz import Digraph, Graph
 
 filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy2.c'
@@ -44,9 +45,26 @@ for line in testFunction:
         if comment in line:
             #start and end index of refComment
             start, end = re.search(comment, line).span()
-            description = re.sub('[/* \n\t]', '', line[end:])
+            description = re.sub('[/*\n\t]', '', line[end + 1:])
+            description1 = jaconv.zen2han(description, ascii=True, kana=False)
+            description2 = re.split('"', description1)
+            if len(description2) == 1:
+                description3 = description2[0].replace(' ', '\n')
+            elif len(description2) == 0:
+                description3 = ''
+            else:
+                #Remove all empty strings
+                description2 = [x for x in description2 if x != '']
+                #Remove all ' ' strings (space)
+                description2 = [x for x in description2 if x != ' ']
+                if len(description2) == 1:
+                    description3 = description2[0]
+                else:
+                    #We are left with only 2 strings. We merge them an place newline in between.
+                    description3 = description2[0] + '\n' + description2[1]
+                
             dictionary = {'comment': comment,
-                          'level': None, 'index': None, 'shape': None, 'label': description,
+                          'level': None, 'index': None, 'shape': None, 'label': description3,
                           'connectWith': None}
             flow.append(dictionary)
 
