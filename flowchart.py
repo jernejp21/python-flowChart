@@ -21,7 +21,7 @@ import re
 import jaconv
 from graphviz import Digraph, Graph
 
-filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy2.c'
+filePath = r'D:\gitHub\python-flowChart\src\elrecvp.c'
 functionName = 'dinputp'
 
 with open(filePath, 'r', encoding='utf-8') as file:
@@ -38,7 +38,107 @@ refComment = ['fc:startStop',
               'fc:middleware',
               'fc:end']
 
+def generateGraph():
+    g = Graph('G', filename=functionName, engine='dot')
+    g.attr(rank='same')
+    g.attr(rankdir='LR')
+    #g.attr(splines='ortho')
+    g.graph_attr = {'fontname': 'MS Gothic',
+                'fontsize': '10',}
+    g.node_attr = {'shape': 'plaintext',
+                'fontname': 'MS Gothic',
+                'fontsize': '10',
+                'fixedsize': 'true',
+                'width': '2.165', #inch
+                'height': '0.472'} #inch
+
+    shapes={'fc:startStop': 'daido_start.png',
+            'fc:process': 'daido_process.png',
+            'fc:ifBranch': 'daido_if.png',
+            'fc:forLoop': 'daido_for.png',
+            'fc:subFunc': 'daido_subfunction.png',
+            'fc:subRoutine': 'daido_subroutine.png',
+            'fc:middleware': 'daido_middleware.png'}
+
+    nodes = []
+    node = {'level': None, 'index': None, 'shape': None, 'label': None}
+    index = 0
+    level = 1
+    maxLvl = 1
+    connectWith = None
+    branches = []
+    for element in flow:
+        elementID = element['comment']
+        if elementID == 'fc:end':
+            level -= 1
+            connectWith = branches[-1]
+            del(branches[-1])
+            continue
+        if elementID == 'fc:else':
+            connectWith = branches[-1]
+            continue
+        element['level'] = level
+        element['index'] = index
+        element['shape'] = shapes[elementID]
+        element['connectWith'] = connectWith
+        connectWith = index
+
+        if elementID == 'fc:ifBranch' or elementID == 'fc:forLoop':
+            level += 1
+            branches.append(index)
+        if level > maxLvl:
+            maxLvl = level
+        nodes.append(dict(element))
+        index += 1
+
+    #Create level structure
+    for level in range(1, maxLvl + 1):
+        g1 = Graph(str(level))
+        for node in nodes:
+            if node['level'] == level:
+                index = str(node['index'])
+                label = node['label']
+                shape = node['shape']
+                comment = node['comment']
+                if comment == 'fc:startStop':
+                    g1.node(index,
+                            label=label,
+                            image=shape,
+                            width="1.299",
+                            height="0.394")
+                else:
+                    g1.node(index,
+                            label=label,
+                            image=shape)
+        g.subgraph(g1)
+
+    #Connect nodes
+    previousLevel = 1
+    branches = []
+    label = ''
+    for node in nodes:
+        connectWith = node['connectWith']
+        index = node['index']
+        comment = node['comment']
+
+        if connectWith == None:
+            continue
+        else:
+            g.edge(str(connectWith), str(index), label=label)
+
+        if comment == 'fc:ifBranch':
+            label = 'TRUE'
+        elif comment == 'fc:else':
+            label = 'FALSE'
+        elif comment == 'fc:forLoop':
+            label = 'loop'
+        else:
+            label = ''
+
+    g.view()
+
 flow = []
+startStopCnt = 0
 
 for line in testFunction:
     for comment in refComment:
@@ -68,103 +168,13 @@ for line in testFunction:
                           'connectWith': None}
             flow.append(dictionary)
 
-
-g = Graph('G', filename=functionName, engine='dot')
-g.attr(rank='same')
-g.attr(rankdir='LR')
-#g.attr(splines='ortho')
-g.graph_attr = {'fontname': 'MS Gothic',
-               'fontsize': '10',}
-g.node_attr = {'shape': 'plaintext',
-               'fontname': 'MS Gothic',
-               'fontsize': '10',
-               'fixedsize': 'true',
-               'width': '2.165', #inch
-               'height': '0.472'} #inch
-
-shapes={'fc:startStop': 'daido_start.png',
-        'fc:process': 'daido_process.png',
-        'fc:ifBranch': 'daido_if.png',
-        'fc:forLoop': 'daido_for.png',
-        'fc:subFunc': 'daido_subfunction.png',
-        'fc:subRoutine': 'daido_subroutine.png',
-        'fc:middleware': 'daido_middleware.png'}
-
-nodes = []
-node = {'level': None, 'index': None, 'shape': None, 'label': None}
-index = 0
-level = 1
-maxLvl = 1
-connectWith = None
-branches = []
-for element in flow:
-    elementID = element['comment']
-    if elementID == 'fc:end':
-        level -= 1
-        connectWith = branches[-1]
-        del(branches[-1])
-        continue
-    if elementID == 'fc:else':
-        connectWith = branches[-1]
-        continue
-    element['level'] = level
-    element['index'] = index
-    element['shape'] = shapes[elementID]
-    element['connectWith'] = connectWith
-    connectWith = index
-
-    if elementID == 'fc:ifBranch' or elementID == 'fc:forLoop':
-        level += 1
-        branches.append(index)
-    if level > maxLvl:
-        maxLvl = level
-    nodes.append(dict(element))
-    index += 1
-
-#Create level structure
-for level in range(1, maxLvl + 1):
-    g1 = Graph(str(level))
-    for node in nodes:
-        if node['level'] == level:
-            index = str(node['index'])
-            label = node['label']
-            shape = node['shape']
-            comment = node['comment']
             if comment == 'fc:startStop':
-                g1.node(index,
-                        label=label,
-                        image=shape,
-                        width="1.299",
-                        height="0.394")
-            else:
-                g1.node(index,
-                        label=label,
-                        image=shape)
-    g.subgraph(g1)
-
-#Connect nodes
-previousLevel = 1
-branches = []
-label = ''
-for node in nodes:
-    connectWith = node['connectWith']
-    index = node['index']
-    comment = node['comment']
-
-    if connectWith == None:
-        continue
-    else:
-        g.edge(str(connectWith), str(index), label=label)
-
-    if comment == 'fc:ifBranch':
-        label = 'TRUE'
-    elif comment == 'fc:else':
-        label = 'FALSE'
-    elif comment == 'fc:forLoop':
-        label = 'loop'
-    else:
-        label = ''
-
-g.view()
+                startStopCnt +=1
+                if startStopCnt == 1:
+                    functionName = description3
+                if startStopCnt == 2:
+                    startStopCnt = 0
+                    generateGraph()
+                    flow = []
 
 print('konec')
