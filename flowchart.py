@@ -21,8 +21,7 @@ import re
 import jaconv
 from graphviz import Digraph, Graph
 
-filePath = r'D:\gitHub\python-flowChart\src\elrecvp.c'
-functionName = 'dinputp'
+filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy2.c'
 
 with open(filePath, 'r', encoding='utf-8') as file:
     testFunction = file.readlines()
@@ -113,7 +112,6 @@ def generateGraph():
         g.subgraph(g1)
 
     #Connect nodes
-    previousLevel = 1
     branches = []
     label = ''
     for node in nodes:
@@ -137,8 +135,10 @@ def generateGraph():
 
     g.view()
 
+#Start of program
 flow = []
 startStopCnt = 0
+functionName = ''
 
 for line in testFunction:
     for comment in refComment:
@@ -176,5 +176,3 @@ for line in testFunction:
                     startStopCnt = 0
                     generateGraph()
                     flow = []
-
-print('konec')
