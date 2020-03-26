@@ -4,30 +4,26 @@
 #    Copyright (C) 2020  Jernej Pangerc; https://github.com/jernejp21
 #
 #    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
+#    it under the terms of the GNU General Public Licence as published by
+#    the Free Software Foundation, either version 3 of the Licence, or
 #    (at your option) any later version.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+#    GNU General Public Licence for more details.
 #
-#    You should have received a copy of the GNU General Public License
+#    You should have received a copy of the GNU General Public Licence
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##
 
 import re
-import jaconv
 from graphviz import Digraph, Graph
+import jaconv
 
-filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy2.c'
-
-with open(filePath, 'r', encoding='utf-8') as file:
-    testFunction = file.readlines()
-
+#---------------Constants----------------------
 #List of special words, representing reference comments.
-refComment = ['fc:startStop',
+REF_COMMENT = ['fc:startStop',
               'fc:process',
               'fc:ifBranch',
               'fc:else',
@@ -37,11 +33,21 @@ refComment = ['fc:startStop',
               'fc:middleware',
               'fc:end']
 
-def generateGraph():
+#List of shapes
+SHAPES={'fc:startStop': 'daido_start.png',
+        'fc:process': 'daido_process.png',
+        'fc:ifBranch': 'daido_if.png',
+        'fc:forLoop': 'daido_for.png',
+        'fc:subFunc': 'daido_subfunction.png',
+        'fc:subRoutine': 'daido_subroutine.png',
+        'fc:middleware': 'daido_middleware.png'}
+
+
+#---------------Functions-------------------------
+def generateGraph(functionName, flow):
     g = Graph('G', filename=functionName, engine='dot')
     g.attr(rank='same')
     g.attr(rankdir='LR')
-    #g.attr(splines='ortho')
     g.graph_attr = {'fontname': 'MS Gothic',
                 'fontsize': '10',}
     g.node_attr = {'shape': 'plaintext',
@@ -50,14 +56,6 @@ def generateGraph():
                 'fixedsize': 'true',
                 'width': '2.165', #inch
                 'height': '0.472'} #inch
-
-    shapes={'fc:startStop': 'daido_start.png',
-            'fc:process': 'daido_process.png',
-            'fc:ifBranch': 'daido_if.png',
-            'fc:forLoop': 'daido_for.png',
-            'fc:subFunc': 'daido_subfunction.png',
-            'fc:subRoutine': 'daido_subroutine.png',
-            'fc:middleware': 'daido_middleware.png'}
 
     nodes = []
     node = {'level': None, 'index': None, 'shape': None, 'label': None}
@@ -69,6 +67,8 @@ def generateGraph():
     for element in flow:
         elementID = element['comment']
         if elementID == 'fc:end':
+            #If fc:end is in flow, we have to return one level back. This element
+            #is empty element, no node is needed.
             level -= 1
             connectWith = branches[-1]
             del(branches[-1])
@@ -78,11 +78,12 @@ def generateGraph():
             continue
         element['level'] = level
         element['index'] = index
-        element['shape'] = shapes[elementID]
+        element['shape'] = SHAPES[elementID]
         element['connectWith'] = connectWith
         connectWith = index
 
         if elementID == 'fc:ifBranch' or elementID == 'fc:forLoop':
+            #For loop and if we create branch which means going into new level.
             level += 1
             branches.append(index)
         if level > maxLvl:
@@ -99,6 +100,8 @@ def generateGraph():
                 label = node['label']
                 shape = node['shape']
                 comment = node['comment']
+                
+                #Only startStop element is smaller. Others are bigger.
                 if comment == 'fc:startStop':
                     g1.node(index,
                             label=label,
@@ -126,6 +129,7 @@ def generateGraph():
 
         if comment == 'fc:ifBranch':
             label = 'TRUE'
+        #FALSE not working.
         elif comment == 'fc:else':
             label = 'FALSE'
         elif comment == 'fc:forLoop':
@@ -135,49 +139,64 @@ def generateGraph():
 
     g.view()
 
-#Start of program
-flow = []
-startStopCnt = 0
-functionName = ''
+def main():
+    filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy2.c'
+    with open(filePath, 'r', encoding='utf-8') as file:
+        sourceFile = file.readlines()
 
-for line in testFunction:
-    for comment in refComment:
-        if comment in line:
-            #start and end index of refComment
-            start, end = re.search(comment, line).span()
-            description = re.sub('[/*\n\t]', '', line[end + 1:])
-            description1 = jaconv.zen2han(description, ascii=True, kana=False)
-            description2 = re.split('"', description1)
-            if len(description2) == 1:
-                description3 = description2[0].replace(' ', '\n')
-            elif len(description2) == 0:
-                description3 = ''
-            else:
-                #Remove all empty strings
-                description2 = [x for x in description2 if x != '']
-                #Remove all ' ' strings (space)
-                description2 = [x for x in description2 if x != ' ']
+    flow = []
+    startStopCnt = 0
+    functionName = ''
+
+    for line in sourceFile:
+        for comment in REF_COMMENT:
+            if comment in line:
+                #Start and end index of REF_COMMENT
+                start, end = re.search(comment, line).span()
+
+                #description is parsed line. Everything before reference comment is removed.
+                #description1 converts full-widht characters to half-width.
+                #description2 creates list of strings. description1 is split at " symbol.
+                #description3 in final step and this string is places as label of graph node.
+                description = re.sub('[/*\n\t]', '', line[end + 1:])
+                description1 = jaconv.zen2han(description, ascii=True, kana=False)
+                description2 = re.split('"', description1)
+
                 if len(description2) == 1:
-                    description3 = description2[0]
+                    description3 = description2[0].replace(' ', '\n')
+                elif len(description2) == 0:
+                    description3 = ''
                 else:
-                    #We are left with only 2 strings. We merge them an place newline in between.
-                    description3 = description2[0] + '\n' + description2[1]
+                    #Remove all empty strings
+                    description2 = [x for x in description2 if x != '']
+                    #Remove all ' ' strings (space)
+                    description2 = [x for x in description2 if x != ' ']
+                    if len(description2) == 1:
+                        description3 = description2[0]
+                    else:
+                        #We are left with only 2 strings. We merge them an place newline in between.
+                        description3 = description2[0] + '\n' + description2[1]
+                        
+                #If string has new line '\n' on last place after parsing, remove it.
+                if len(description3):
+                    if description3[-1] == '\n':
+                        description3 = description3[:-1]
                     
-            #If string has new line '\n' on last place after parsing, remove it.
-            if len(description3):
-                if description3[-1] == '\n':
-                    description3 = description3[:-1]
-                
-            dictionary = {'comment': comment,
-                          'level': None, 'index': None, 'shape': None, 'label': description3,
-                          'connectWith': None}
-            flow.append(dictionary)
+                dictionary = {'comment': comment,
+                            'level': None, 'index': None,
+                            'shape': None, 'label': description3,
+                            'connectWith': None}
+                flow.append(dictionary)
 
-            if comment == 'fc:startStop':
-                startStopCnt +=1
-                if startStopCnt == 1:
-                    functionName = description3
-                if startStopCnt == 2:
-                    startStopCnt = 0
-                    generateGraph()
-                    flow = []
+                if comment == 'fc:startStop':
+                    startStopCnt +=1
+                    if startStopCnt == 1:
+                        functionName = description3
+                    if startStopCnt == 2:
+                        startStopCnt = 0
+                        generateGraph(functionName, flow)
+                        flow = []
+
+#---------------Start of program-----------------------
+if __name__ == "__main__":
+    main()
