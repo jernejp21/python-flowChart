@@ -162,6 +162,11 @@ for line in testFunction:
                 else:
                     #We are left with only 2 strings. We merge them an place newline in between.
                     description3 = description2[0] + '\n' + description2[1]
+                    
+            #If string has new line '\n' on last place after parsing, remove it.
+            if len(description3):
+                if description3[-1] == '\n':
+                    description3 = description3[:-1]
                 
             dictionary = {'comment': comment,
                           'level': None, 'index': None, 'shape': None, 'label': description3,
