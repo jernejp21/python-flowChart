@@ -136,17 +136,20 @@ def generateGraph(functionName, flow):
         if connectWith == None:
             continue
         else:
+            label = ''
+            connectingNode = nodes[connectWith]
+            if connectingNode['comment'] == 'fc:ifBranch':
+                if index == connectWith + 1:
+                    label = 'TRUE'
+                else:
+                    if node['level'] != connectingNode['level']:
+                        label = 'FALSE'
+            if (connectingNode['comment'] == 'fc:forLoop' and
+                node['level'] != connectingNode['level']):
+                label = 'loop'
+                
             g.edge(str(connectWith), str(index), label=label)
 
-        if comment == 'fc:ifBranch':
-            label = 'TRUE'
-        #FALSE not working.
-        elif comment == 'fc:else':
-            label = 'FALSE'
-        elif comment == 'fc:forLoop':
-            label = 'loop'
-        else:
-            label = ''
     if VIEW:
         g.view(directory=DEST)
     else:
@@ -255,16 +258,5 @@ def parseCLIArguments():
 
 #---------------Start of program-----------------------
 if __name__ == "__main__":
-    #ONLY FOR TEST; START
-    import sys
-    sys.argv.append('-s')
-    sys.argv.append('src/dummy2.c')
-    sys.argv.append('-d')
-    sys.argv.append('Output')
-    sys.argv.append('-v')
-    #sys.argv.append('--func')
-    #sys.argv.append('init400m')
-    #ONLY FOR TEST; END
-    
     parseCLIArguments()
     main()
