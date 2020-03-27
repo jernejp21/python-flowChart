@@ -1,13 +1,15 @@
+
 # python-flowChart
 
-**version a1 (alpha 1)**
+**version a1.1 (alpha 1.1)**
 
 Python program for creating flowchart from source code. Program was developed with purpose to sync source code with documentation for work purpose.
 
 This program uses reference comments inside source code to generate flow chart.
 
 ## To do
-Current version is alpha version. Program does the job, but input and output are still rough. I will change program gradually. Please see <a href="https://github.com/jernejp21/python-flowChart/milestones">milestones</a> for improvements.
+Create better alignment of nodes.
+I will change program gradually. Please see <a href="https://github.com/jernejp21/python-flowChart/milestones">milestones</a> for improvements.
 
 **When (if) number of users start increasing, I will change milestones, commit comments and issues to English. For now, I will be using Slovene.**
 
@@ -21,13 +23,31 @@ To use this python program, you will need the following SW packages:
   - <a href="https://pypi.org/project/jaconv/">jaconv</a> (if you use Japanese comments)
 
 ### How to use?
-- Clone or download repository.
-- Put reference comments in your source code (see chapter **Reference comments**)
-- Open *flowchar.py* with you favourite text editor:
-    - If you don't use Japanese characters, comment *import jaconv*
-    - Change *filePath* To path where your source code file is located.
-- Save *flowchart.py* and run it: `python flowchart.py`
-- Generated files will be saved in the same folder as *flowchart.py* is located.
+-   Clone or download repository.
+-   Put reference comments in your source code (see chapter **Reference comments**)
+- Use command line input
+
+#### CLI support
+```
+usage: flowchart.py [-h] -s SOURCE -d DEST [-j] [-v] [--func FUNCS]
+
+optional arguments:
+  -h, --help    show this help message and exit
+  -s SOURCE     Absolute or relative path to source code file.
+  -d DEST       Absolute or relative path to destination folder.
+  -j, --jaconv  If set, jaconv (for Japanese) will be used.
+  -v, --view    If set, preview will be enabled.
+  --func FUNCS  With this argument you can create graph for only specific
+                functions in source code.
+
+```
+#### Example
+
+The following line will export every function from testCode.c as separate PDF files in OutputFolder. We use path relative to *flowchart.py*.
+`python flowchart.py -s src/testCode.c -d OutputFolder`
+
+The following line will export only functions *foo1* and *foo2* from testCode.c as separate PDF files in OutputFolder. We use path relative to *flowchart.py*.
+`python flowchart.py -s src/testCode.c -d OutputFolder --func foo1 --func foo2`
 
 #### Warning
 - Code was tested on embedded C source code.

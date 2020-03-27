@@ -18,8 +18,10 @@
 ##
 
 import re
+import os
+import argparse
 from graphviz import Digraph, Graph
-import jaconv
+
 
 #---------------Constants----------------------
 #List of special words, representing reference comments.
@@ -41,6 +43,13 @@ SHAPES={'fc:startStop': 'daido_start.png',
         'fc:subFunc': 'daido_subfunction.png',
         'fc:subRoutine': 'daido_subroutine.png',
         'fc:middleware': 'daido_middleware.png'}
+
+#CLI input arguments declaration
+SOURCE = None
+DEST = None
+JAP = None
+VIEW = None
+FUNCS = None
 
 
 #---------------Functions-------------------------
@@ -78,7 +87,9 @@ def generateGraph(functionName, flow):
             continue
         element['level'] = level
         element['index'] = index
-        element['shape'] = SHAPES[elementID]
+        shapePath = os.path.split(os.path.abspath(__file__))[0]
+        shape = os.path.join(shapePath, SHAPES[elementID])
+        element['shape'] = shape
         element['connectWith'] = connectWith
         connectWith = index
 
@@ -136,12 +147,13 @@ def generateGraph(functionName, flow):
             label = 'loop'
         else:
             label = ''
-
-    g.view()
+    if VIEW:
+        g.view(directory=DEST)
+    else:
+        g.render(directory=DEST)
 
 def main():
-    filePath = r'C:\Sluzba\git_test\python-flowChart\src\dummy2.c'
-    with open(filePath, 'r', encoding='utf-8') as file:
+    with open(SOURCE, 'r', encoding='utf-8') as file:
         sourceFile = file.readlines()
 
     flow = []
@@ -155,11 +167,15 @@ def main():
                 start, end = re.search(comment, line).span()
 
                 #description is parsed line. Everything before reference comment is removed.
-                #description1 converts full-widht characters to half-width.
+                #description1 converts full-widht characters to half-width if -jap argument.
                 #description2 creates list of strings. description1 is split at " symbol.
                 #description3 in final step and this string is places as label of graph node.
                 description = re.sub('[/*\n\t]', '', line[end + 1:])
-                description1 = jaconv.zen2han(description, ascii=True, kana=False)
+                if JAP:
+                    import jaconv
+                    description1 = jaconv.zen2han(description, ascii=True, kana=False)
+                else:
+                    description1 = description
                 description2 = re.split('"', description1)
 
                 if len(description2) == 1:
@@ -194,9 +210,61 @@ def main():
                         functionName = description3
                     if startStopCnt == 2:
                         startStopCnt = 0
-                        generateGraph(functionName, flow)
+                        if FUNCS:
+                            for func in FUNCS:
+                                if func == functionName:
+                                    generateGraph(functionName, flow)
+                        else:
+                            generateGraph(functionName, flow)
                         flow = []
+
+def parseCLIArguments():
+    global SOURCE
+    global DEST
+    global JAP
+    global VIEW
+    global FUNCS
+    #Parse CLI input arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', dest='source',
+                        required=True,
+                        help='Absolute or relative path to source code file.')
+    parser.add_argument('-d', dest='dest',
+                        required=True,
+                        help='Absolute or relative path to destination folder.')
+    parser.add_argument('-j', '--jaconv',
+                        dest='jap',
+                        action='store_true',
+                        help='If set, jaconv (for Japanese) will be used.')
+    parser.add_argument('-v', '--view',
+                        dest='view',
+                        action='store_true',
+                        help='If set, preview will be enabled.')
+    parser.add_argument('--func',
+                        dest='funcs',
+                        action='append',
+                        help=('With this argument you can create graph for ' +
+                              'only specified functions in source code'))
+    args = parser.parse_args()
+
+    SOURCE = args.source
+    DEST = args.dest
+    JAP = args.jap
+    VIEW = args.view
+    FUNCS = args.funcs
 
 #---------------Start of program-----------------------
 if __name__ == "__main__":
+    #ONLY FOR TEST; START
+    import sys
+    sys.argv.append('-s')
+    sys.argv.append('src/dummy2.c')
+    sys.argv.append('-d')
+    sys.argv.append('Output')
+    sys.argv.append('-v')
+    #sys.argv.append('--func')
+    #sys.argv.append('init400m')
+    #ONLY FOR TEST; END
+    
+    parseCLIArguments()
     main()
