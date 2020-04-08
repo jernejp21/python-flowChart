@@ -36,7 +36,7 @@ REF_COMMENT = ['fc:startStop',
               'fc:end']
 
 #List of shapes
-SHAPES={'fc:startStop': 'daido_start.png',
+SHAPES = {'fc:startStop': 'daido_start.png',
         'fc:process': 'daido_process.png',
         'fc:ifBranch': 'daido_if.png',
         'fc:forLoop': 'daido_for.png',
@@ -44,12 +44,17 @@ SHAPES={'fc:startStop': 'daido_start.png',
         'fc:subRoutine': 'daido_subroutine.png',
         'fc:middleware': 'daido_middleware.png'}
 
+#List of comments
+COMMENTS = {'C': '/*',
+            'python': '#'}
+
 #CLI input arguments declaration
 SOURCE = None
 DEST = None
 JAP = None
 VIEW = None
 FUNCS = None
+LANG = None
 
 
 #---------------Functions-------------------------
@@ -173,7 +178,8 @@ def main():
                 #description1 converts full-widht characters to half-width if -jap argument.
                 #description2 creates list of strings. description1 is split at " symbol.
                 #description3 in final step and this string is places as label of graph node.
-                description = re.sub('[/*\n\t]', '', line[end + 1:])
+                comm = '[' + COMMENTS[LANG] + '\n\t]'
+                description = re.sub(comm, '', line[end + 1:])
                 if JAP:
                     import jaconv
                     description1 = jaconv.zen2han(description, ascii=True, kana=False)
@@ -227,6 +233,8 @@ def parseCLIArguments():
     global JAP
     global VIEW
     global FUNCS
+    global LANG
+    
     #Parse CLI input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', dest='source',
@@ -248,6 +256,11 @@ def parseCLIArguments():
                         action='append',
                         help=('With this argument you can create graph for ' +
                               'only specified functions in source code'))
+    parser.add_argument('-l', '--lang',
+                        dest='lang',
+                        required=True,
+                        help=('With this argument you define programming language ' +
+                              'you are using.'))
     args = parser.parse_args()
 
     SOURCE = args.source
@@ -255,6 +268,7 @@ def parseCLIArguments():
     JAP = args.jap
     VIEW = args.view
     FUNCS = args.funcs
+    LANG = args.lang
 
 #---------------Start of program-----------------------
 if __name__ == "__main__":
