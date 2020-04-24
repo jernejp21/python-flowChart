@@ -1,7 +1,7 @@
 
 # python-flowChart
 
-**version a1.1 (alpha 1.1)**
+**version a1.1 (alpha 1.2)**
 
 Python program for creating flowchart from source code. Program was developed with purpose to sync source code with documentation for work purpose.
 
@@ -17,6 +17,8 @@ I will change program gradually. Please see <a href="https://github.com/jernejp2
 ### What do I need?
 To use this python program, you will need the following SW packages:
 - <a href="https://graphviz.org/">Graphviz</a> (I'm using Windows 10 for development and test)
+ - Make sure you have it in environment variable. If you run from CMD or terminal, command `dot` should be callable.
+ - If it isn't executed, add variable. For Windows, the path should be *\"C:\Program Files (x86)\Graphviz2.38\bin\"* if you install in default directory.
 - Python (I'm using <a href="https://www.anaconda.com/distribution/">Anaconda Python</a> 3.7 for development and test)
 - Pthon packages:
   - <a href="https://graphviz.readthedocs.io/en/latest/index.html">graphviz</a>
@@ -29,16 +31,19 @@ To use this python program, you will need the following SW packages:
 
 #### CLI support
 ```
-usage: flowchart.py [-h] -s SOURCE -d DEST [-j] [-v] [--func FUNCS]
+usage: flowchart.py [-h] -s SOURCE -d DEST [-j] [-v] [--func FUNCS] -l LANG
 
 optional arguments:
-  -h, --help    show this help message and exit
-  -s SOURCE     Absolute or relative path to source code file.
-  -d DEST       Absolute or relative path to destination folder.
-  -j, --jaconv  If set, jaconv (for Japanese) will be used.
-  -v, --view    If set, preview will be enabled.
-  --func FUNCS  With this argument you can create graph for only specific
-                functions in source code.
+  -h, --help            show this help message and exit
+  -s SOURCE             Absolute or relative path to source code file.
+  -d DEST               Absolute or relative path to destination folder.
+  -j, --jaconv          If set, jaconv (for Japanese) will be used.
+  -v, --view            If set, preview will be enabled.
+  --func FUNCS          With this argument you can create graph for only
+                        specified functions in source code
+  -l LANG, --lang LANG  With this argument you define programming language you
+                        are using.
+  
 
 ```
 #### Example
@@ -57,7 +62,7 @@ The following line will export only functions *foo1* and *foo2* from testCode.c 
 
 # Daido graph
 
-*Daido graph* if one sort of flow chart diagrams. Name *Daido* is based on company I worked for where I started developing this program. The company used this style of flow chart.
+*Daido graph* if one sort of flow chart diagrams. The company I worked for used this style of flow chart. It is pretty good for C language, for object-orientaded languages might not work so good.
 
 These are elements representing the diagram:
 - Start and stop of function
@@ -123,7 +128,7 @@ There is also a limit how many strings can go into 1 row. The limit is 24 half-w
 <br>
 >this is half-width
 ><br>
->ｔｈｉｓ　ｉｓ　ｆｕｌｌ−ｗｉｄｔｈ
+>ｔｈｉｓ　ｉｓ　ｆｕｌｌーｗｉｄｔｈ
 ><br>
 >ﾊﾝｶｸ
 ><br>
@@ -149,6 +154,8 @@ Currently supported are the following comments:
 ### fc:startStop
 
 This comment represents start and stop of the function.
+<br>
+File name will be taken by this comment. If you put space between words, newline will be show in diagram, but in file name space " " will be replaced by uderline "_".
 
 ```c
 void func(){  //fc:startStop func

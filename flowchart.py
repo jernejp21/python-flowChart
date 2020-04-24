@@ -217,7 +217,7 @@ def main():
                 if comment == 'fc:startStop':
                     startStopCnt += 1
                     if startStopCnt == 1:
-                        functionName = description3
+                        functionName = description3.replace('\n', '_')
                     if startStopCnt == 2:
                         startStopCnt = 0
                         if FUNCS:
